@@ -1,0 +1,16 @@
+{
+  "name": "cognito-pre-signup-trigger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "compile": "tsc"
+  },
+  "dependencies": {
+    "esbuild": "^0.14.14"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.92",
+    "typescript": "^4.8.4"
+  }
+}

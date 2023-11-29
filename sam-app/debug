@@ -1,0 +1,5 @@
+START RequestId: 219bbc51-d17b-4dc2-81ea-705c5472c513 Version: $LATEST
+2023-10-08T18:02:19.223Z	219bbc51-d17b-4dc2-81ea-705c5472c513	INFO	test
+END RequestId: 219bbc51-d17b-4dc2-81ea-705c5472c513
+REPORT RequestId: 219bbc51-d17b-4dc2-81ea-705c5472c513	Init Duration: 0.08 ms	Duration: 83.80 ms	Billed Duration: 84 ms	Memory Size: 128 MB	Max Memory Used: 128 MB	
+{"success":true}

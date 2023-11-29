@@ -1,0 +1,27 @@
+{
+  "version": "1",
+  "region": "us-east-1",
+  "userPoolId": "us-east-1_XXXXXXXX",
+  "userName": "janedoe",
+  "callerContext": {
+    "awsSdkVersion": "aws-sdk-unknown-unknown",
+    "clientId": "XXXXXXXX"
+  },
+  "triggerSource": "PreSignUp_SignUp",
+  "request": {
+    "userAttributes": {
+      "string": "string"
+    },
+    "validationData": {
+      "string": "string"
+    },
+    "clientMetadata": {
+      "string": "string"
+    }
+  },
+  "response": {
+    "autoConfirmUser": false,
+    "autoVerifyEmail": false,
+    "autoVerifyPhone": false
+  }
+}

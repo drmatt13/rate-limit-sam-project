@@ -1,0 +1,21 @@
+{
+  "name": "edit-account-api-key",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.427.0",
+    "@types/aws-lambda": "^8.10.123",
+    "esbuild": "^0.19.4",
+    "typescript": "^5.2.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.5"
+  }
+}

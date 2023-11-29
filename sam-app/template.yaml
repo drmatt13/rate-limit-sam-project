@@ -1,0 +1,398 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Pasted Description
+
+  *******
+
+  **
+
+Globals:
+  Function:
+    Timeout: 60
+
+Resources:
+  # Cognito + Pre/Post Signup Triggers
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      LambdaConfig:
+        PreSignUp: !GetAtt PreSignUpFunction.Arn
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+
+  # Cognito Triggers
+  PreSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/cognito-pre-signup-trigger
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  PreSignUpFunctionResourceBasedPolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PreSignUpFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/cognito-post-confirmation-trigger
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  PostConfirmationFunctionResourceBasedPolicy:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt PostConfirmationFunction.Arn
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt UserPool.Arn
+  PostConfirmationFunctionPermissionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: PostConfirmationFunctionPermissionPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:PutEvents
+            Resource: !GetAtt MyEventBus.Arn
+      Roles:
+        - !Ref PostConfirmationFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+
+  # Cognito Authorizer
+  CognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: cognitoAuthorizer
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref MyApi
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - !GetAtt UserPool.Arn
+
+  # API Gateway
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET, POST, PUT, DELETE'"
+        AllowHeaders: "'Content-Type, Authorization'"
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          title: !Ref AWS::StackName
+        securityDefinitions:
+          CognitoAuthorizer:
+            type: "apiKey"
+            name: "Authorization"
+            in: "header"
+            x-amazon-apigateway-authtype: "cognito_user_pools"
+            x-amazon-apigateway-authorizer:
+              type: "cognito_user_pools"
+              providerARNs:
+                - !GetAtt UserPool.Arn
+        paths:
+          /get-account-api-key:
+            get:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountApiKeyFunction.Arn}/invocations
+                httpMethod: POST
+                type: aws_proxy
+              security:
+                - CognitoAuthorizer: []
+          /get-account-credit-card:
+            get:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountCreditCardFunction.Arn}/invocations
+                httpMethod: POST
+                type: aws_proxy
+              security:
+                - CognitoAuthorizer: []
+          /edit-account-credit-card:
+            put:
+              responses: {}
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
+                httpMethod: POST
+                type: aws_proxy
+              security:
+                - CognitoAuthorizer: []
+
+  # API Gateway Functions
+  GetAccountApiKeyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/get-account-api-key
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Events:
+        MyApiEvent:
+          Type: Api
+          Properties:
+            Path: /get-account-api-key
+            Method: get
+            RestApiId: !Ref MyApi
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  GetAccountApiKeyFunctionPermissionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: GetAccountApiKeyFunctionPermissionPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource: !GetAtt ApiKeysTable.Arn
+      Roles:
+        - !Ref GetAccountApiKeyFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+
+  GetAccountCreditCardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/get-account-credit-card
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Events:
+        MyApiEvent:
+          Type: Api
+          Properties:
+            Path: /get-account-credit-card
+            Method: get
+            RestApiId: !Ref MyApi
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  GetAccountCreditCardFunctionPermissionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: GetAccountCreditCardFunctionPermissionPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource: !GetAtt CreditCardsTable.Arn
+      Roles:
+        - !Ref GetAccountCreditCardFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+
+  EditAccountCreditCardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/edit-account-credit-card
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Events:
+        MyApiEvent:
+          Type: Api
+          Properties:
+            Path: /edit-account-credit-card
+            Method: put
+            RestApiId: !Ref MyApi
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  EditAccountCreditCardFunctionPermissionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: EditAccountCreditCardFunctionPermissionPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+            Resource: !GetAtt CreditCardsTable.Arn
+      Roles:
+        - !Ref EditAccountCreditCardFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+
+  # DynamoDBTables
+  CreditCardsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: CreditCards
+      PrimaryKey:
+        Name: user_id
+        Type: String
+  PaymentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Payments
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: date
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+  ApiKeysTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ApiKeys
+      AttributeDefinitions:
+        - AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # DynamoDB Streams
+
+  # EventBridge
+  MyEventBus:
+    Type: "AWS::Events::EventBus"
+    Properties:
+      Name: BackendEventBus
+
+  # EventBridge Rules
+  AccountCreatedRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      EventBusName: !Ref MyEventBus
+      EventPattern:
+        source:
+          - "account.created"
+      Targets:
+        - Id: EditAccountAPIKeyTarget
+          Arn: !GetAtt EditAccountAPIKeyFunction.Arn
+
+  # EventBridge Functions
+  EditAccountAPIKeyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/edit-account-api-key
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: true
+        EntryPoints:
+          - index.ts
+  EditAccountAPIKeyFunctionResourceBasedPolicy:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref EditAccountAPIKeyFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AccountCreatedRule.Arn
+  EditAccountAPIKeyFunctionPermissionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: EditAccountAPIKeyFunctionPermissionPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Resource: !GetAtt ApiKeysTable.Arn
+      Roles:
+        - !Ref EditAccountAPIKeyFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+
+  #AdjustThrottlingForAPIKeyFunction
+  #APIKeyModifiedFunction
+  #AppendTransactionFunction
+
+  # SQS
+
+  # SQS Function
+
+  # Lambda Layers
+
+Outputs:
+  UserPoolId:
+    Description: "The ID of the Cognito User Pool"
+    Value: !Ref UserPool
+
+  UserPoolClientId:
+    Description: "The ID of the Cognito App Client"
+    Value: !Ref UserPoolClient
+
+  ApiGatewayEndpoint:
+    Description: "The URL endpoint for the API Gateway"
+    Value: !Sub "https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
