@@ -1,7 +1,7 @@
 {
-  "body": "eyJ0ZXN0IjoiYm9keSJ9",
+  "body": "",
   "resource": "/{proxy+}",
-  "path": "/path/to/resource",
+  "path": "/reset-account-api-key",
   "httpMethod": "POST",
   "isBase64Encoded": true,
   "queryStringParameters": {
@@ -13,7 +13,7 @@
     ]
   },
   "pathParameters": {
-    "proxy": "/path/to/resource"
+    "proxy": "/reset-account-api-key"
   },
   "stageVariables": {
     "baz": "qux"
@@ -22,7 +22,7 @@
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, sdch",
     "Accept-Language": "en-US,en;q=0.8",
-    "Authorization": "eyJraWQiOiJMaGUzSnJ5bVBDWU9NRnZSeXczR0h6aWt1QXN1bjJ2aXV5ekJTek83SHc0PSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzMjJlZTkzNy04MzA5LTQ2YjUtOTZiNC0xNTg0YjE1NzVhZjQiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfMkdNdFlHRDZtIiwiY29nbml0bzp1c2VybmFtZSI6InRlc3RAbWFpbC5jb20iLCJvcmlnaW5fanRpIjoiYzM1ZWUwZDctNjUzMy00M2M4LWI4ZmItYmVlNmU2NWM2NGZjIiwiYXVkIjoiNWVrdnByYzl2YXZ1ZWxnNDJtcnE4cGg2MjIiLCJldmVudF9pZCI6ImY5NjE4NjUwLTI0ZjYtNDFjNi1hMzE3LWNiMTFlNzQ4NjFkNyIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNjk3NDkzODQ4LCJleHAiOjE2OTc1NjMyMTgsImlhdCI6MTY5NzU1OTYxOCwianRpIjoiMTZlNDk4ZDAtODA3NC00MjM2LWE1YzUtZGYzZDg0NzlmNjgyIiwiZW1haWwiOiJ0ZXN0QG1haWwuY29tIn0.JGxqytFJWClMKaN2chB-6xkXrEQdL5W6aW_wRp7y4spGe0GhzSS_CPKXGtYtEra1u3yhbGZpWEeacuY5mDzkjc16GMr6BnmF6_BJ54ckEhTpKC_yPocNDZemFtxMVQUUH0SsyOiDX7PmXWVMKQv1FE2tC9hOi4n0i9UP9PeD29Lmpi9iBNn5_eX_7GGnKIsKoU1hnuR-ZtU2rhO0EDn5Veg4Pld-IFUKZMwg8wZZcfs5THiBz9WB3nTiY2L02thjbSAK8td_Ygl93tzimMh4IV_zdaeOXveUG4-SMmV_88dJ-JaPzyH9R-lysycR3dCBhd4JIXZaXg0v3PcmHF6t-A",
+    "Authorization": "eyJraWQiOiJlQlJiblwvaTAreXg1VkF4QW1MY2lcL2szK3pKNzBSZ3BQalR3TzIzczBtUUE9IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI0ZjIxZTM4OC1iMjkyLTQ5YzUtOTkyYi1kNWQ1MDFkNTc4ZDUiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfN2F4a2tWRzB0IiwiY29nbml0bzp1c2VybmFtZSI6Ik1hdHRoZXcuU3dlZW5leTAwMUBnbWFpbC5jb20iLCJvcmlnaW5fanRpIjoiZDY5MmY3MzktMTVlYy00YzE5LWIzOWYtZGVkYjFkNzAwZWFjIiwiYXVkIjoiMmVwNmUyODA1cjRjNnZzdmtyYTV2ajk4bXAiLCJldmVudF9pZCI6Ijg4MDNmZjk3LTk2MjAtNDQ1NC1iYjZmLWQwNjlmNmI2YmYwNSIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNzExMjI0MzMwLCJleHAiOjE3MTEyMzkzODYsImlhdCI6MTcxMTIzNTc4NiwianRpIjoiNDE5NjZlNGEtZjNkOS00Njk2LWI4NzItMjVjYzM3ZDM1MzZlIiwiZW1haWwiOiJNYXR0aGV3LlN3ZWVuZXkwMDFAZ21haWwuY29tIn0.Xqj5at9rl541CAjZomJYCIiIyP8qUwa8wAe0IXZL7oSWJ2x-RmGKx0ssY8bhBhZDmSFfTeAJ_onH7kR0WPVObYxqgNJDoDKbzp7JYm-Pjbt1meDASd3DOIenjXZtC9JvfqLLwTzZlFOreDn1Jd8KVmkHeDf7-twycmV90QqOTmbpJfLaIw4QbgxG7lBAcGzHs1ZNm5xUMfFT0wQqNumKkjK5i5wyGs6V_xh6gv_LwbT8KxSr0YYfxpxDfB63SKrSTkHPPOjKObojQX_lIWBYg0jtS7eWMlBmkC5LZI1apgiiFTWzz3gCWv06Hm-yBg0EQzmYBKZEBTgSqwht9IZpIQ",
     "Cache-Control": "max-age=0",
     "CloudFront-Forwarded-Proto": "https",
     "CloudFront-Is-Desktop-Viewer": "true",
@@ -115,7 +115,7 @@
       "userAgent": "Custom User Agent String",
       "user": null
     },
-    "path": "/prod/path/to/resource",
+    "path": "/prod/reset-account-api-key",
     "resourcePath": "/{proxy+}",
     "httpMethod": "POST",
     "apiId": "1234567890",

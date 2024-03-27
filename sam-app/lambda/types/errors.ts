@@ -15,7 +15,8 @@ export interface DynamoDBError {
     | "UnrecognizedClientException"
     | "ValidationException"
     | "Internal Server Error"
-    | "ItemNotFound";
+    | "ItemNotFound"
+    | "ItemAlreadyExists";
   message: string;
   status: number; // Like 400 or 500
   retryable: boolean; // A derived field that indicates if the error can be retried or not

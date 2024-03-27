@@ -1,10 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 // types
 import { JwtHeaderPayload } from "../types/requestPayloads";
-import { APIKeysTableItem } from "../types/tableItems";
-import { GetAccountApiKeyResponse } from "../types/responses";
+import { ResetAccountApiKeyResponse } from "../types/responses";
 
 const dynamoClient = new DynamoDBClient({ region: "us-east-1" });
 
@@ -12,7 +12,7 @@ const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Credentials": true,
   "Access-Control-Allow-Headers": "Authorization,Content-Type",
-  "Access-Control-Allow-Methods": "GET",
+  "Access-Control-Allow-Methods": "POST",
 };
 
 export const handler = async (
@@ -28,38 +28,28 @@ export const handler = async (
 
     const payload: JwtHeaderPayload = JSON.parse(decodedPayloadString);
 
-    const { Item } = await dynamoClient.send(
-      new GetItemCommand({
+    const newApiKey = uuidv4();
+
+    await dynamoClient.send(
+      new UpdateItemCommand({
         TableName: "ApiKeys",
         Key: {
           user_id: { S: payload.sub },
         },
+        UpdateExpression: "SET api_key = :apiKey",
+        ExpressionAttributeValues: {
+          ":apiKey": { S: newApiKey },
+        },
       })
     );
-
-    const tableItem = Item as unknown as APIKeysTableItem;
-
-    if (!tableItem) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: {
-            name: "ItemNotFound",
-            message: "Item not found",
-          },
-        } as GetAccountApiKeyResponse),
-      };
-    }
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: true,
-        tableItem,
-      } as GetAccountApiKeyResponse),
+        apiKey: newApiKey,
+      } as ResetAccountApiKeyResponse),
     };
   } catch (error) {
     return {
@@ -68,7 +58,7 @@ export const handler = async (
       body: JSON.stringify({
         success: false,
         error,
-      } as GetAccountApiKeyResponse),
+      } as ResetAccountApiKeyResponse),
     };
   }
 };

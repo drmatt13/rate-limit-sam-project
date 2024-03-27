@@ -21,11 +21,11 @@ const userPool = new CognitoUserPool(poolData);
 const valididateEmail = z.string().email();
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [email, setFormInputEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { setSession } = useContext(SessionContext);
+  const { setSession, setEmail } = useContext(SessionContext);
   const { setModal } = useContext(ModalContext);
 
   const loginUser = async (e: React.FormEvent) => {
@@ -51,6 +51,7 @@ const Login = () => {
 
     cognitoUser.authenticateUser(authenticationDetails, {
       onSuccess: (session) => {
+        setEmail(email);
         setSession(session);
       },
       onFailure: (err) => {
@@ -73,7 +74,7 @@ const Login = () => {
             className="bg-white/80 w-52 px-2.5 py-2 rounded !outline-none"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setFormInputEmail(e.target.value)}
             disabled={loading}
             required={true}
             name="email"

@@ -4,7 +4,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "throttle-guard-stack"
+stack_name = "tiered-api-access-manager-iac"
 
 [default.build.parameters]
 cached = true

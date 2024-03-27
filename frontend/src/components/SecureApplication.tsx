@@ -20,6 +20,8 @@ const SecureApplication = ({ children }: CredentialsLayoutProps) => {
     setSession,
     sessionData,
     setSessionData,
+    email,
+    setEmail,
   } = useSession();
 
   if (loadingSession) {
@@ -36,7 +38,15 @@ const SecureApplication = ({ children }: CredentialsLayoutProps) => {
 
   return (
     <SessionContext.Provider
-      value={{ logout, session, setSession, sessionData, setSessionData }}
+      value={{
+        logout,
+        session,
+        setSession,
+        sessionData,
+        setSessionData,
+        email,
+        setEmail,
+      }}
     >
       {children}
     </SessionContext.Provider>

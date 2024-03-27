@@ -1,11 +1,14 @@
 import { useCallback, useState, useContext } from "react";
 import { Link } from "react-router-dom";
+import { AuthenticationDetails, CognitoUser } from "amazon-cognito-identity-js";
 
 // context
 import ModalContext from "../context/ModalContext";
+import SessionContext from "../context/SessionContext";
 
 function Home() {
   const { setModal } = useContext(ModalContext);
+  const { email } = useContext(SessionContext);
 
   const [loading] = useState(false);
 

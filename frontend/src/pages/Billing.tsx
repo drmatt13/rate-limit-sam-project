@@ -6,20 +6,19 @@ import axios from "axios";
 import SessionContext from "../context/SessionContext";
 
 // types
-import { GetAccountCreditCardResponse } from "../../../sam-app/lambda/types/responses";
+import {
+  GetAccountCreditCardResponse,
+  EditAccountCreditCardResponse,
+} from "../../../sam-app/lambda/types/responses";
+import { CustomError } from "../types/CustomError";
 
 const API_ENDPOINT = import.meta.env.VITE_ApiGatewayEndpoint as string;
 
 function Billing() {
   const { session, sessionData, setSessionData } = useContext(SessionContext);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<
-    GetAccountCreditCardResponse["error"]["name"] | null
-  >(null);
 
-  const getUsersCardData = useCallback(async (): Promise<
-    typeof sessionData.cardStatus
-  > => {
+  const getUsersCardData = useCallback(async () => {
     try {
       const response = await axios.get<GetAccountCreditCardResponse>(
         `${API_ENDPOINT}/get-account-credit-card`,
@@ -29,96 +28,202 @@ function Billing() {
           },
         }
       );
-      if (response.data.error) throw new Error(response.data.error.name);
+      if (!response.data.success) throw new Error(response.data.error?.name);
       setSessionData((current) => ({
         ...current,
-        cardStatus: response.data.tableItem.valid.B ? "valid" : "invalid",
+        cardStatus: response.data.tableItem?.valid.BOOL ? "valid" : "invalid",
+        recurringBilling: response.data.tableItem?.recurring.BOOL,
       }));
     } catch (error) {
       alert(
-        ((error as Error)
-          .message as GetAccountCreditCardResponse["error"]["name"]) ===
-          "ItemNotFound"
+        (error as CustomError).response?.data.error?.name === "ItemNotFound"
           ? "Credit card not found in database for this account."
-          : ((error as Error)
-              .message as GetAccountCreditCardResponse["error"]["name"])
-      );
-      setError(
-        (error as Error)
-          .message as GetAccountCreditCardResponse["error"]["name"]
+          : (error as CustomError).response?.data.error?.message
       );
       setSessionData((current) => ({
         ...current,
         cardStatus: "no card",
       }));
     }
-    return "no card";
-  }, [session, sessionData, setSessionData]);
+  }, [session, setSessionData]);
 
-  const initialPageLoad = useCallback(async () => {
-    setLoading(true);
-    await getUsersCardData();
-    setLoading(false);
-  }, [getUsersCardData]);
+  const getUsersPaymentData = useCallback(async () => {}, []);
 
   useEffect(() => {
-    if (!sessionData.cardStatus) {
-      initialPageLoad();
-    }
-  }, [initialPageLoad, sessionData.cardStatus]);
+    setLoading(true);
+    let getUsersCardDataPromise: Promise<void> | null = null;
+    let getUsersPaymentDataPromise: Promise<void> | null = null;
+    if (!sessionData.cardStatus) getUsersCardDataPromise = getUsersCardData();
+    if (!sessionData.payments)
+      getUsersPaymentDataPromise = getUsersPaymentData();
+    const promises = [
+      getUsersPaymentDataPromise,
+      getUsersCardDataPromise,
+    ].filter((p) => p !== null) as Promise<void>[];
+    Promise.all(promises).then(() => {
+      setLoading(false);
+    });
+  }, [
+    getUsersCardData,
+    getUsersPaymentData,
+    sessionData.cardStatus,
+    sessionData.payments,
+  ]);
 
   const addCard = useCallback(async () => {
     setLoading(true);
     const option = confirm("Add a credit card to your account?");
-    if (option) setSessionData({ ...sessionData, cardStatus: "valid" });
+    if (option) {
+      try {
+        const response = await axios.post<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {},
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({ ...sessionData, cardStatus: "valid" });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   const validateCard = useCallback(async () => {
     setLoading(true);
     const option = confirm("Validate your credit card?");
-    if (option) setSessionData({ ...sessionData, cardStatus: "valid" });
+    if (option) {
+      try {
+        const response = await axios.put<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {
+            valid: true,
+          },
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({ ...sessionData, cardStatus: "valid" });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   const invalidateCard = useCallback(async () => {
     setLoading(true);
     const option = confirm(
       "Invalidate your credit card? Transactions in the backend will be declined."
     );
-    if (option) setSessionData({ ...sessionData, cardStatus: "invalid" });
+    if (option) {
+      try {
+        const response = await axios.put<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {
+            valid: false,
+          },
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({ ...sessionData, cardStatus: "invalid" });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   const enableReccuringBilling = useCallback(async () => {
     setLoading(true);
     const option = confirm("Enable recurring billing?");
-    if (option) setSessionData({ ...sessionData, recurringBilling: true });
+    if (option) {
+      try {
+        const response = await axios.put<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {
+            valid: false,
+          },
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({ ...sessionData, recurringBilling: true });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   const disableReccuringBilling = useCallback(async () => {
     setLoading(true);
     const option = confirm("Disable recurring billing?");
-    if (option) setSessionData({ ...sessionData, recurringBilling: false });
+    if (option) {
+      try {
+        const response = await axios.put<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {
+            valid: false,
+          },
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({ ...sessionData, recurringBilling: false });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   const deleteCard = useCallback(async () => {
     setLoading(true);
     const option = confirm("Delete credit card from your account?");
-    if (option)
-      setSessionData({
-        ...sessionData,
-        cardStatus: "no card",
-        recurringBilling: false,
-      });
+    if (option) {
+      try {
+        const response = await axios.delete<EditAccountCreditCardResponse>(
+          `${API_ENDPOINT}/edit-account-credit-card`,
+          {
+            headers: {
+              Authorization: session?.getIdToken().getJwtToken(),
+            },
+          }
+        );
+        if (!response.data.success) throw new Error(response.data.error?.name);
+        setSessionData({
+          ...sessionData,
+          cardStatus: "no card",
+          recurringBilling: false,
+        });
+      } catch (error) {
+        alert((error as CustomError).response?.data.error?.name);
+      }
+    }
     setLoading(false);
-  }, [sessionData, setSessionData]);
+  }, [session, sessionData, setSessionData]);
 
   return (
     <>
-      <div className="w-full h-screen flex flex-col items-center justify-start">
+      <div className="w-full h-screen flex flex-col items-center justify-center">
         <div className="w-96 flex flex-col items-center">
           <h1 className="text-3xl font-bold font-mono">Billing</h1>
           <div

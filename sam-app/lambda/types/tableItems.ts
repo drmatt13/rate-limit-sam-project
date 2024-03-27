@@ -1,20 +1,35 @@
 export type CreditCardsTableItem = {
+  user_id: {
+    S: string;
+  };
   valid: {
-    B: boolean;
+    BOOL: boolean;
   };
   recurring: {
-    B: boolean;
+    BOOL: boolean;
+  };
+  nextPayment: {
+    S: string;
+  };
+};
+
+export type PaymentTableItem = {
+  user_id: {
+    S: string;
+  };
+  amount: {
+    N: string;
+  };
+  date: {
+    S: string;
   };
 };
 
 export type APIKeysTableItem = {
-  api_key: {
+  user_id: {
     S: string;
   };
-  ttl: {
-    N: number;
-  };
-  user_id: {
+  api_key: {
     S: string;
   };
   tier: {

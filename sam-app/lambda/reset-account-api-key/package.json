@@ -1,0 +1,22 @@
+{
+  "name": "reset-account-api-key",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.429.0",
+    "esbuild": "^0.19.4",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.124",
+    "@types/node": "^20.8.6",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.2.2"
+  }
+}

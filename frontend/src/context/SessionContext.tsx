@@ -9,6 +9,8 @@ interface ContextInterface {
   logout: () => void;
   sessionData: SessionData;
   setSessionData: React.Dispatch<React.SetStateAction<SessionData>>;
+  email: string;
+  setEmail: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const Context = createContext<ContextInterface>({
@@ -17,6 +19,8 @@ const Context = createContext<ContextInterface>({
   logout: () => {},
   sessionData: {},
   setSessionData: () => {},
+  email: "",
+  setEmail: () => {},
 });
 
 export default Context;

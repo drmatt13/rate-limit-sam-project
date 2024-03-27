@@ -1,18 +1,24 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+  PutEventsCommandInput,
+} from "@aws-sdk/client-eventbridge";
 
 // types
 import { JwtHeaderPayload } from "../types/requestPayloads";
 import { CreditCardsTableItem } from "../types/tableItems";
-import { GetAccountCreditCardResponse } from "../types/responses";
+import { MakeCreditCardPaymentResponse } from "../types/responses";
 
 const dynamoClient = new DynamoDBClient({ region: "us-east-1" });
+const eventBridgeClient = new EventBridgeClient({ region: "us-east-1" });
 
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Credentials": true,
   "Access-Control-Allow-Headers": "Authorization,Content-Type",
-  "Access-Control-Allow-Methods": "GET",
+  "Access-Control-Allow-Methods": "POST",
 };
 
 export const handler = async (
@@ -39,6 +45,7 @@ export const handler = async (
 
     const tableItem = Item as unknown as CreditCardsTableItem;
 
+    // If Credit Card is not found, return 404
     if (!tableItem) {
       return {
         statusCode: 404,
@@ -49,17 +56,55 @@ export const handler = async (
             name: "ItemNotFound",
             message: "Item not found",
           },
-        } as GetAccountCreditCardResponse),
+        } as MakeCreditCardPaymentResponse),
+      };
+    }
+
+    // If Credit Card is valid
+    if (tableItem.valid.BOOL) {
+      const params: PutEventsCommandInput = {
+        Entries: [
+          {
+            EventBusName: "TieredApiAccessManagerEventBus",
+            Source: "payment.success",
+            DetailType: "Valid Payment Detail Type",
+            Detail: JSON.stringify({
+              user_id: payload.sub,
+            }),
+          },
+        ],
+      };
+      const command = new PutEventsCommand(params);
+      await eventBridgeClient.send(command);
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          paymentSuccess: true,
+        } as MakeCreditCardPaymentResponse),
+      };
+    }
+
+    // If Credit Card is invalid
+    if (!tableItem.valid.BOOL) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          paymentSuccess: false,
+        } as MakeCreditCardPaymentResponse),
       };
     }
 
     return {
-      statusCode: 200,
+      statusCode: 400,
       headers,
       body: JSON.stringify({
-        success: true,
-        tableItem,
-      } as GetAccountCreditCardResponse),
+        success: false,
+        paymentSuccess: false,
+      } as MakeCreditCardPaymentResponse),
     };
   } catch (error) {
     return {
@@ -67,8 +112,9 @@ export const handler = async (
       headers,
       body: JSON.stringify({
         success: false,
+        paymentSuccess: false,
         error,
-      } as GetAccountCreditCardResponse),
+      } as MakeCreditCardPaymentResponse),
     };
   }
 };

@@ -21,6 +21,7 @@ const UseSession = () => {
   const [loadingSession, setLoadingSession] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
   const [sessionData, setSessionData] = useState<SessionData>({});
+  const [email, setEmail] = useState("");
 
   const refreshSession = useCallback(() => {
     console.log("refreshing session");
@@ -90,6 +91,8 @@ const UseSession = () => {
     logout,
     sessionData,
     setSessionData,
+    email,
+    setEmail,
   };
 };
 
