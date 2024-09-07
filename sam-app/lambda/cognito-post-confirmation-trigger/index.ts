@@ -22,5 +22,5 @@ export const handler = async (event: PostConfirmationTriggerEvent) => {
   };
   const command = new PutEventsCommand(params);
   await client.send(command);
-  return;
+  return event;
 };

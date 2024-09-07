@@ -1,11 +1,17 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: |
   App Description
 
 Globals:
   Function:
     Timeout: 60
+
+Parameters:
+  VerifiedSenderEmail:
+    Type: String
+    Description: The verified sender email address in Amazon SES.
+    Default: none
 
 Resources:
   # Cognito + Pre/Post Signup Triggers
@@ -44,7 +50,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -67,11 +73,19 @@ Resources:
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt PostConfirmationDLQ.Arn
+      Environment:
+        Variables:
+          POSTCONFIRMATIONDLQ_QUEUE_NAME: !GetAtt PostConfirmationDLQ.QueueName
+          POSTCONFIRMATIONDLQ_QUEUE_ARN: !GetAtt PostConfirmationDLQ.Arn
+          POSTCONFIRMATIONDLQ_QUEUE_URL: !Ref PostConfirmationDLQ
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt PostConfirmationDLQ.QueueName
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -87,7 +101,7 @@ Resources:
     Properties:
       PolicyName: PostConfirmationFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -113,21 +127,21 @@ Resources:
     Properties:
       StageName: prod
       Cors:
-        AllowOrigin: "'*'"
-        AllowMethods: "'GET, POST, PUT, DELETE'"
-        AllowHeaders: "'Content-Type, Authorization'"
+        AllowOrigin: '''*'''
+        AllowMethods: '''GET, POST, PUT, DELETE'''
+        AllowHeaders: '''Content-Type, Authorization'''
       DefinitionBody:
-        swagger: "2.0"
+        swagger: '2.0'
         info:
           title: !Ref AWS::StackName
         securityDefinitions:
           CognitoAuthorizer:
-            type: "apiKey"
-            name: "Authorization"
-            in: "header"
-            x-amazon-apigateway-authtype: "cognito_user_pools"
+            type: apiKey
+            name: Authorization
+            in: header
+            x-amazon-apigateway-authtype: cognito_user_pools
             x-amazon-apigateway-authorizer:
-              type: "cognito_user_pools"
+              type: cognito_user_pools
               providerARNs:
                 - !GetAtt UserPool.Arn
         paths:
@@ -135,8 +149,7 @@ Resources:
             post:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MakeCreditCardFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MakeCreditCardPaymentFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -145,8 +158,7 @@ Resources:
             get:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountCreditCardFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountCreditCardFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -155,8 +167,7 @@ Resources:
             post:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -164,8 +175,7 @@ Resources:
             put:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -173,8 +183,7 @@ Resources:
             delete:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditAccountCreditCardFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -185,8 +194,7 @@ Resources:
             get:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountApiKeyFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAccountApiKeyFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
@@ -195,15 +203,14 @@ Resources:
             post:
               responses: {}
               x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResetAccountApiKeyFunction.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ResetAccountApiKeyFunction.Arn}/invocations
                 httpMethod: POST
                 type: aws_proxy
               security:
                 - CognitoAuthorizer: []
 
   # API Gateway Functions
-  MakeCreditCardFunction:
+  MakeCreditCardPaymentFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambda/make-credit-card-payment
@@ -222,16 +229,16 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
-  MakeCreditCardFunctionPermissionPolicy:
+  MakeCreditCardPaymentFunctionPermissionPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: MakeCreditCardFunctionPermissionPolicy
+      PolicyName: MakeCreditCardPaymentFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -242,7 +249,7 @@ Resources:
               - events:PutEvents
             Resource: !GetAtt EventBus.Arn
       Roles:
-        - !Ref MakeCreditCardFunctionRole
+        - !Ref MakeCreditCardPaymentFunctionRole
 
   GetAccountCreditCardFunction:
     Type: AWS::Serverless::Function
@@ -263,7 +270,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -272,7 +279,7 @@ Resources:
     Properties:
       PolicyName: GetAccountCreditCardFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -312,7 +319,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -321,7 +328,7 @@ Resources:
     Properties:
       PolicyName: EditAccountCreditCardFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -355,7 +362,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -364,7 +371,7 @@ Resources:
     Properties:
       PolicyName: GetAccountApiKeyFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -392,7 +399,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -401,7 +408,7 @@ Resources:
     Properties:
       PolicyName: ResetAccountApiKeyFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -458,41 +465,45 @@ Resources:
 
   # EventBridge
   EventBus:
-    Type: "AWS::Events::EventBus"
+    Type: AWS::Events::EventBus
     Properties:
       Name: TieredApiAccessManagerEventBus
 
   # EventBridge Rules
   AccountCreatedRule:
-    Type: "AWS::Events::Rule"
+    Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EventBus
       EventPattern:
         source:
-          - "account.created"
+          - account.created
       Targets:
-        - Id: "TargetSQS"
+        - Id: TargetSQS1
           Arn: !GetAtt EditAccountApiKeyQueue.Arn
   PaymentSuccessRule:
-    Type: "AWS::Events::Rule"
+    Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EventBus
       EventPattern:
         source:
-          - "payment.success"
+          - payment.success
       Targets:
-        - Id: "TargetSQS"
+        - Id: TargetSQS1
           Arn: !GetAtt EditAccountApiKeyQueue.Arn
+        - Id: TargetSQS2
+          Arn: !GetAtt UpdatePaymentQueue.Arn
   PaymentFailureRule:
-    Type: "AWS::Events::Rule"
+    Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EventBus
       EventPattern:
         source:
-          - "payment.failure"
+          - payment.failure
       Targets:
-        - Id: "TargetSQS"
+        - Id: TargetSQS1
           Arn: !GetAtt EditAccountApiKeyQueue.Arn
+        - Id: TargetSQS2
+          Arn: !GetAtt UpdatePaymentQueue.Arn
 
   # SQS Queues
   EditAccountApiKeyQueue:
@@ -500,19 +511,22 @@ Resources:
     Properties:
       QueueName: EditAccountApiKeyQueue
       VisibilityTimeout: 70
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EditAccountApiKeyDLQ.Arn
+        maxReceiveCount: 5
   EditAccountApiKeyQueuePolicy:
-    Type: "AWS::SQS::QueuePolicy"
+    Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
         - !Ref EditAccountApiKeyQueue
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
-              Service: "events.amazonaws.com"
+              Service: events.amazonaws.com
             Action:
-              - "sqs:SendMessage"
+              - sqs:SendMessage
             Resource: !GetAtt EditAccountApiKeyQueue.Arn
 
   UpdatePaymentQueue:
@@ -520,19 +534,22 @@ Resources:
     Properties:
       QueueName: UpdatePaymentQueue
       VisibilityTimeout: 70
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UpdatePaymentDLQ.Arn
+        maxReceiveCount: 5
   UpdatePaymentQueuePolicy:
-    Type: "AWS::SQS::QueuePolicy"
+    Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
         - !Ref UpdatePaymentQueue
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Effect: "Allow"
+          - Effect: Allow
             Principal:
-              Service: "events.amazonaws.com"
+              Service: events.amazonaws.com
             Action:
-              - "sqs:SendMessage"
+              - sqs:SendMessage
             Resource: !GetAtt UpdatePaymentQueue.Arn
 
   # Dead Letter SQS Queues
@@ -572,7 +589,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -581,12 +598,12 @@ Resources:
     Properties:
       PolicyName: EditAccountAPIKeyFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
               - dynamodb:PutItem
-              - dynamodb:UpdateIt
+              - dynamodb:UpdateItem
             Resource: !GetAtt ApiKeysTable.Arn
       Roles:
         - !Ref EditAccountAPIKeyFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
@@ -598,6 +615,9 @@ Resources:
       CodeUri: lambda/update-payment
       Handler: index.handler
       Runtime: nodejs18.x
+      Environment:
+        Variables:
+          SENDER_EMAIL: !Ref VerifiedSenderEmail
       Architectures:
         - x86_64
       Events:
@@ -613,7 +633,7 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: "es2020"
+        Target: es2020
         Sourcemap: true
         EntryPoints:
           - index.ts
@@ -622,7 +642,7 @@ Resources:
     Properties:
       PolicyName: UpdatePaymentFunctionPermissionPolicy
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
@@ -634,22 +654,95 @@ Resources:
               - dynamodb:GetItem
               - dynamodb:PutItem
               - dynamodb:UpdateItem
-        - Effect: Allow
-          Action:
-            - ses:SendEmail
-            - ses:SendRawEmail
-          Resource: "*" # SES doesn't support resource-level permissions, so you must use "*"
             Resource: !GetAtt PaymentsTable.Arn
+          - Effect: Allow
+            Action:
+              - ses:SendEmail
+              - ses:SendRawEmail
+            Resource: '*'
       Roles:
-        - !Ref UpdatePaymentFunctionRole # This references the automatically generated IAM role for your Lambda function by SAM.
+        - !Ref UpdatePaymentFunctionRole
+  Queue:
+    Type: AWS::SQS::Queue
 
 Outputs:
   UserPoolId:
-    Description: "The ID of the Cognito User Pool"
+    Description: The ID of the Cognito User Pool
     Value: !Ref UserPool
   UserPoolClientId:
-    Description: "The ID of the Cognito App Client"
+    Description: The ID of the Cognito App Client
     Value: !Ref UserPoolClient
   ApiGatewayEndpoint:
-    Description: "The URL endpoint for the API Gateway"
-    Value: !Sub "https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    Description: The URL endpoint for the API Gateway
+    Value: !Sub https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/prod
+Metadata:
+  AWS::Composer::Groups:
+    Group:
+      Label: MakeCreditCardPayment
+      Members:
+        - MakeCreditCardPaymentFunction
+        - MakeCreditCardPaymentFunctionPermissionPolicy
+    Group2:
+      Label: GetAccountCreditCard
+      Members:
+        - GetAccountCreditCardFunction
+        - GetAccountCreditCardFunctionPermissionPolicy
+    Group3:
+      Label: EditAccountCreditCard
+      Members:
+        - EditAccountCreditCardFunction
+        - EditAccountCreditCardFunctionPermissionPolicy
+    Group4:
+      Label: GetAccountApiKey
+      Members:
+        - GetAccountApiKeyFunction
+        - GetAccountApiKeyFunctionPermissionPolicy
+    Group5:
+      Label: ResetAccountApiKey
+      Members:
+        - ResetAccountApiKeyFunction
+        - ResetAccountApiKeyFunctionPermissionPolicy
+    Group6:
+      Label: EditAccountAPIKey
+      Members:
+        - EditAccountAPIKeyFunction
+        - EditAccountAPIKeyFunctionPermissionPolicy
+    Group7:
+      Label: UpdatePayment
+      Members:
+        - UpdatePaymentFunction
+        - UpdatePaymentFunctionPermissionPolicy
+    Group9:
+      Label: Cognito
+      Members:
+        - UserPoolClient
+        - UserPool
+        - CognitoAuthorizer
+        - PreSignUpFunction
+        - PostConfirmationFunction
+        - PostConfirmationDLQ
+        - PostConfirmationFunctionPermissionPolicy
+    Group10:
+      Label: DynamoDB Tables
+      Members:
+        - CreditCardsTable
+        - ApiKeysTable
+        - PaymentsTable
+    Group11:
+      Label: UpdatePaymentQueue
+      Members:
+        - UpdatePaymentQueue
+        - UpdatePaymentDLQ
+        - UpdatePaymentQueuePolicy
+    Group12:
+      Label: Group12
+      Members:
+        - EditAccountApiKeyQueue
+        - EditAccountApiKeyDLQ
+        - EditAccountApiKeyQueuePolicy
+    Group13:
+      Label: Group13
+      Members:
+        - AccountCreatedRule
+        - PaymentSuccessRule
+        - PaymentFailureRule
